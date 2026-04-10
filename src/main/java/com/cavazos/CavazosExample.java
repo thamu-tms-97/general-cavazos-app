@@ -1,58 +1,96 @@
 package com.cavazos;
 
 import java.util.Random;
-import org.json.simple.*;
+import java.util.Scanner;
+import java.util.Stack;
 
 public class CavazosExample {
 
-  public static void main(String[] args) {
-    String fileName =
-      "/Users/jerom/Documents/GitHub/class-java/general-cavazos/undoredo/src/main/java/com/cavazos/commands.json";
+    public static void main(String[] args) {
+        // Load the list of commands from the JSON file
+        String[] commands = JSONFile.readCommandsFromResource("/commands.json");
 
-    // read coammands
-    JSONArray commandJSONArray = JSONFile.readArray(fileName);
-    String[] commandArray = getCommandArray(commandJSONArray);
-    System.out.println(commandArray);
+        if (commands == null) {
+            System.out.println("Error loading commands.json");
+            return;
+        }
 
-    // print list of all commands
-    System.out.println("----- List of all commands -----");
-    print(commandArray);
+        Scanner input = new Scanner(System.in);
+        Random rand = new Random();
+        
+        // Using stacks to handle the undo/redo history
+        Stack<String> undoStack = new Stack<>();
+        Stack<String> redoStack = new Stack<>();
 
-    System.out.println(
-      "----- Issuing 5 random commands from General Cavazos -----"
-    );
-    randomCommand(commandArray, 5);
-  }
+        char choice = ' ';
 
-  // randomly issue commands from General Cavazos
-  public static void randomCommand(String[] commandArray, int numCommand) {
-    Random rand = new Random();
-    System.out.printf("Number\tCommand\n");
-    System.out.printf("------\t---------------\n");
-    for (int i = 0; i < numCommand; i++) {
-      int randIndex = rand.nextInt(commandArray.length);
-      System.out.printf("%04d\t%s\n", i, commandArray[randIndex]);
+        while (choice != 'q') {
+            printMenu();
+            System.out.print("Enter a command: ");
+
+            String line = input.nextLine().trim().toLowerCase();
+            if (line.isEmpty()) continue;
+
+            choice = line.charAt(0);
+            System.out.println();
+
+            switch (choice) {
+                case 'i':
+                    // Pick a random command and add to undo stack
+                    String cmd = commands[rand.nextInt(commands.length)];
+                    System.out.println("[COMMAND ISSUED]: General Cavazos orders the troops to do: " + cmd);
+                    undoStack.push(cmd);
+                    redoStack.clear(); // Clear redo whenever a new command is issued
+                    break;
+
+                case 'l':
+                    // Print the full list of available commands
+                    System.out.println("Number  Command");
+                    System.out.println("------  --------------------");
+                    for (int i = 0; i < commands.length; i++) {
+                        System.out.printf("%02d      %s%n", (i + 1), commands[i]);
+                    }
+                    break;
+
+                case 'u':
+                    // Move the last command from undo to redo
+                    if (undoStack.isEmpty()) {
+                        System.out.println("ERROR: There are no commands to undo. Please issue or redo a command");
+                    } else {
+                        String last = undoStack.pop();
+                        redoStack.push(last);
+                        System.out.println("[UNDO COMMAND ISSUED]: General Cavazos orders the troops to undo: " + last);
+                    }
+                    break;
+
+                case 'r':
+                    // Move the last undone command back to undo stack
+                    if (redoStack.isEmpty()) {
+                        System.out.println("ERROR: There are no commands to redo.");
+                    } else {
+                        String redo = redoStack.pop();
+                        undoStack.push(redo);
+                        System.out.println("[REDO COMMAND ISSUED]: General Cavazos orders the troops to redo: " + redo);
+                    }
+                    break;
+
+                case 'q':
+                    System.out.println("Thank You General Cavazos");
+                    break;
+            }
+        }
+        input.close();
     }
-  }
 
-  // print command array
-  public static void print(String[] commandArray) {
-    System.out.printf("Number\tCommand\n");
-    System.out.printf("------\t---------------\n");
-    for (int i = 0; i < commandArray.length; i++) {
-      System.out.printf("%04d\t%s\n", i, commandArray[i]);
+    public static void printMenu() {
+        System.out.println("----------------------------------------------------------------");
+        System.out.println("General Cavazos Commander App");
+        System.out.println("----------------------------------------------------------------");
+        System.out.println("i    Issue a command");
+        System.out.println("l    List all of the commands");
+        System.out.println("u    Undo the last command that was issued");
+        System.out.println("r    Redo the last command that was issued");
+        System.out.println("q    Quit");
+        System.out.println("----------------------------------------------------------------");
     }
-  }
-
-  // get array of commands
-  public static String[] getCommandArray(JSONArray commandArray) {
-    String[] arr = new String[commandArray.size()];
-
-    // get names from json object
-    for (int i = 0; i < commandArray.size(); i++) {
-      String command = commandArray.get(i).toString();
-      arr[i] = command;
-    }
-    return arr;
-  }
 }

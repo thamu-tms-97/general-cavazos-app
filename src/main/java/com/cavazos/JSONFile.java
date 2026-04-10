@@ -6,29 +6,28 @@ import org.json.simple.parser.*;
 
 public class JSONFile {
 
-  // read a json file and return an array
-  public static JSONArray readArray(String fileName) {
-    //
-    // read the birthday.json file and iterate over it
-    //
+    // Helper to read the json file from the resources folder
+    public static String[] readCommandsFromResource(String resourceName) {
+        JSONParser parser = new JSONParser();
+        JSONArray data = null;
 
-    // JSON parser object to parse read file
-    JSONParser jsonParser = new JSONParser();
+        try (
+            InputStream is = JSONFile.class.getResourceAsStream(resourceName);
+            InputStreamReader reader = new InputStreamReader(is)
+        ) {
+            if (is == null) return null;
 
-    JSONArray data = null;
+            Object obj = parser.parse(reader);
+            data = (JSONArray) obj;
+        } catch (Exception e) {
+            return null;
+        }
 
-    try (FileReader reader = new FileReader(fileName)) {
-      Object obj = jsonParser.parse(reader);
-
-      data = (JSONArray) obj;
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-    } catch (IOException e) {
-      e.printStackTrace();
-    } catch (ParseException e) {
-      e.printStackTrace();
+        // Convert the JSONArray into a standard String array for the menu
+        String[] commands = new String[data.size()];
+        for (int i = 0; i < data.size(); i++) {
+            commands[i] = data.get(i).toString().trim();
+        }
+        return commands;
     }
-
-    return data;
-  }
 }
